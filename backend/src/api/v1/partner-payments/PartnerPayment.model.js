@@ -1,11 +1,11 @@
-import { Schema, model } from 'mongoose'
+import { Schema, model } from "mongoose";
 
 const statusToSettlementStatus = {
-  pending: 'pending_review',
-  unpaid: 'queued_for_payout',
-  paid: 'completed',
-  rejected: 'rejected',
-}
+  pending: "pending_review",
+  unpaid: "queued_for_payout",
+  paid: "completed",
+  rejected: "rejected",
+};
 
 const partnerPaymentSchema = new Schema(
   {
@@ -28,14 +28,14 @@ const partnerPaymentSchema = new Schema(
     screenshotUrl: { type: String },
     status: {
       type: String,
-      enum: ['pending', 'unpaid', 'paid', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "unpaid", "paid", "rejected"],
+      default: "pending",
       index: true,
     },
     settlementStatus: {
       type: String,
-      enum: ['pending_review', 'queued_for_payout', 'completed', 'rejected'],
-      default: 'pending_review',
+      enum: ["pending_review", "queued_for_payout", "completed", "rejected"],
+      default: "pending_review",
     },
     submittedAt: {
       type: Date,
@@ -55,54 +55,56 @@ const partnerPaymentSchema = new Schema(
       default: null,
     },
   },
-  { timestamps: true }
-)
+  { timestamps: true },
+);
 
-partnerPaymentSchema.pre('validate', function normalizeFields(next) {
-  if (typeof this.partnerName === 'string') {
-    this.partnerName = this.partnerName.trim()
+partnerPaymentSchema.pre("validate", function normalizeFields() {
+  if (typeof this.partnerName === "string") {
+    this.partnerName = this.partnerName.trim();
   }
-  if (typeof this.partnerEmail === 'string') {
-    this.partnerEmail = this.partnerEmail.trim().toLowerCase()
-  }
-  if (typeof this.bankAccountNumber === 'string') {
-    this.bankAccountNumber = this.bankAccountNumber.trim()
-  }
-  next()
-})
 
-partnerPaymentSchema.pre('save', function syncSettlementStatus(next) {
+  if (typeof this.partnerEmail === "string") {
+    this.partnerEmail = this.partnerEmail.trim().toLowerCase();
+  }
+
+  if (typeof this.bankAccountNumber === "string") {
+    this.bankAccountNumber = this.bankAccountNumber.trim();
+  }
+});
+
+partnerPaymentSchema.pre("save", function syncSettlementStatus() {
   this.settlementStatus =
-    statusToSettlementStatus[this.status] ?? 'pending_review'
-  next()
-})
+    statusToSettlementStatus[this.status] ?? "pending_review";
+});
 
-function normalizeUpdate(next) {
-  const update = this.getUpdate() ?? {}
-  const payload = update.$set ?? update
+function normalizeUpdate() {
+  const update = this.getUpdate() ?? {};
+  const payload = update.$set ?? update;
 
-  if (typeof payload.partnerName === 'string') {
-    payload.partnerName = payload.partnerName.trim()
+  if (typeof payload.partnerName === "string") {
+    payload.partnerName = payload.partnerName.trim();
   }
-  if (typeof payload.partnerEmail === 'string') {
-    payload.partnerEmail = payload.partnerEmail.trim().toLowerCase()
+  if (typeof payload.partnerEmail === "string") {
+    payload.partnerEmail = payload.partnerEmail.trim().toLowerCase();
   }
-  if (typeof payload.bankAccountNumber === 'string') {
-    payload.bankAccountNumber = payload.bankAccountNumber.trim()
+  if (typeof payload.bankAccountNumber === "string") {
+    payload.bankAccountNumber = payload.bankAccountNumber.trim();
   }
   if (payload.status) {
     payload.settlementStatus =
-      statusToSettlementStatus[payload.status] ?? 'pending_review'
+      statusToSettlementStatus[payload.status] ?? "pending_review";
   }
 
   if (update.$set) {
-    update.$set = payload
+    update.$set = payload;
   }
-  next()
 }
 
-partnerPaymentSchema.pre('findOneAndUpdate', normalizeUpdate)
-partnerPaymentSchema.pre('updateOne', normalizeUpdate)
-partnerPaymentSchema.pre('updateMany', normalizeUpdate)
+partnerPaymentSchema.pre("findOneAndUpdate", normalizeUpdate);
+partnerPaymentSchema.pre("updateOne", normalizeUpdate);
+partnerPaymentSchema.pre("updateMany", normalizeUpdate);
 
-export const PartnerPaymentModel = model('PartnerPayment', partnerPaymentSchema)
+export const PartnerPaymentModel = model(
+  "PartnerPayment",
+  partnerPaymentSchema,
+);
