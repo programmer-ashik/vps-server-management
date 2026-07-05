@@ -99,7 +99,6 @@ function normalizeUpdate() {
     update.$set = payload;
   }
 }
-
 partnerPaymentSchema.pre("findOneAndUpdate", normalizeUpdate);
 partnerPaymentSchema.pre("updateOne", normalizeUpdate);
 partnerPaymentSchema.pre("updateMany", normalizeUpdate);

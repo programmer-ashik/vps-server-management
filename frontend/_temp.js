@@ -102,20 +102,8 @@ export default function PartnerPaymentsList() {
   );
   const [modalStatusFilter, setModalStatusFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
-  const [pendingStatusUpdate, setPendingStatusUpdate] = useState(null);
   const { showToast } = useToast();
-  const handleActionClick = (id, status) => {
-    setPendingStatusUpdate({ id, status });
-  };
 
-  const handleConfirm = async () => {
-    if (deleteId) {
-      await handleDelete();
-    } else if (pendingStatusUpdate) {
-      await markStatus(pendingStatusUpdate.id, pendingStatusUpdate.status);
-      setPendingStatusUpdate(null);
-    }
-  };
   const queryParams = useMemo(() => {
     const query = {};
     if (search.trim()) query.search = search.trim();
@@ -160,15 +148,7 @@ export default function PartnerPaymentsList() {
       null,
     [filteredGroups, groupedPayments, selectedGroupKey],
   );
-  const amountBreakdown = useMemo(() => {
-    if (!selectedGroup) return { paid: 0, due: 0 };
-    const paid = selectedGroup.requests
-      .filter((r) => r.status === "paid")
-      .reduce((sum, r) => sum + Number(r.amount), 0);
-    // "Due" = total amount - already paid
-    const due = selectedGroup.totalAmount - paid;
-    return { paid, due };
-  }, [selectedGroup]);
+
   const modalRequests = useMemo(() => {
     if (!selectedGroup) return [];
     if (!modalStatusFilter) return selectedGroup.requests;
@@ -352,24 +332,6 @@ export default function PartnerPaymentsList() {
                   {formatUsd(selectedGroup.totalAmount)}
                 </div>
               </div>
-              {/* Add this inside the grid in your Modal */}
-              <div className='rounded-lg border p-4'>
-                <div className='text-xs uppercase tracking-wide text-neutral-500'>
-                  Paid Amount
-                </div>
-                <div className='mt-2 text-xl font-semibold'>
-                  {formatUsd(amountBreakdown.paid)}
-                </div>
-              </div>
-              <div className='rounded-lg border p-4'>
-                <div className='text-xs uppercase tracking-wide text-amber-700'>
-                  Due Amount
-                </div>
-                <div className='mt-2 text-xl font-semibold'>
-                  {formatUsd(amountBreakdown.due)}
-                </div>
-              </div>
-
               <div className='rounded-lg border p-4'>
                 <div className='text-xs uppercase tracking-wide text-neutral-500'>
                   Latest Submission
@@ -454,9 +416,7 @@ export default function PartnerPaymentsList() {
                             {item.status === "pending" && (
                               <>
                                 <button
-                                  onClick={() =>
-                                    handleActionClick(item.id, "unpaid")
-                                  }
+                                  onClick={() => markStatus(item.id, "unpaid")}
                                   className='rounded-md border border-sky-300 px-2 py-1 text-xs text-sky-700'
                                 >
                                   Approve
@@ -473,9 +433,7 @@ export default function PartnerPaymentsList() {
                             )}
                             {item.status === "unpaid" && (
                               <button
-                                onClick={() =>
-                                  handleActionClick(item.id, "paid")
-                                }
+                                onClick={() => markStatus(item.id, "paid")}
                                 className='rounded-md border border-emerald-300 px-2 py-1 text-xs text-emerald-700'
                               >
                                 Mark Paid
@@ -483,9 +441,7 @@ export default function PartnerPaymentsList() {
                             )}
                             {item.status === "rejected" && (
                               <button
-                                onClick={() =>
-                                  handleActionClick(item.id, "pending")
-                                }
+                                onClick={() => markStatus(item.id, "pending")}
                                 className='rounded-md border border-amber-300 px-2 py-1 text-xs text-amber-700'
                               >
                                 Reopen
@@ -510,18 +466,11 @@ export default function PartnerPaymentsList() {
       </Modal>
 
       <ConfirmDialog
-        isOpen={!!deleteId || !!pendingStatusUpdate}
-        onClose={() => {
-          setDeleteId(null);
-          setPendingStatusUpdate(null);
-        }}
-        onConfirm={handleConfirm}
-        title={deleteId ? "Delete Request" : "Confirm Status Change"}
-        message={
-          deleteId
-            ? "Are you sure you want to delete this payout request?"
-            : `Are you sure you want to update status to ${pendingStatusUpdate?.status}?`
-        }
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title='Delete Partner Payment'
+        message='Are you sure you want to delete this payout request?'
       />
     </div>
   );
